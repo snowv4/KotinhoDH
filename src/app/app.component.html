@@ -1,0 +1,43 @@
+<a class="skip-link" href="#main-content">Pular para a ficha</a>
+<div class="app-shell">
+ <aside class="character-sidebar" aria-label="Identidade do personagem">
+  <a class="brand" href="./"><span class="brand-seal" aria-hidden="true">✳</span><span>SETE RAÍZES<small>UM CADERNO DE VIAGEM</small></span></a>
+  <div class="portrait-frame"><div class="portrait-ring" aria-hidden="true"></div><img [src]="store.character().portrait || 'kote-original.png'" [alt]="'Retrato de '+store.character().name" width="1199" height="1312"><span class="level-badge"><small>NÍVEL</small>{{store.character().level}}</span></div>
+  <div class="identity"><span class="eyebrow">{{store.character().ancestry}} · {{store.character().age}} anos · {{store.character().pronouns}}</span><h1>{{store.character().name}}</h1><p class="nickname">Pode me chamar de {{store.character().nickname}}.</p><div class="identity-rule"><span>✦</span></div><p class="class-name">{{store.character().className}}</p><span class="community">{{store.character().community}}</span></div>
+  <div class="sidebar-bottom"><blockquote>“Isso merece<br>uma olhadinha…”</blockquote><span class="sidebar-caption">CURIOSO POR NATUREZA.<br>MAGO POR ACASO. AINDA EM CASA, DE ALGUM JEITO.</span><button class="button sidebar-edit" (click)="edit()">✎ Editar personagem</button></div>
+ </aside>
+ <div class="main-shell">
+  <header class="topbar"><span class="breadcrumb">DAGGERHEART <span>/</span> CADERNO DO KOTE</span><div class="topbar-actions"><button class="text-button" (click)="exportBackup()">↓ Exportar backup</button><button class="text-button" (click)="importFile.click()">↑ Importar</button><input #importFile hidden type="file" accept=".json,application/json" aria-label="Importar backup JSON" (change)="importBackup($event)"></div></header>
+  <main id="main-content">
+   <section class="welcome"><div><span class="eyebrow">Algum lugar na estrada · volume I</span><h2>Ainda há tanto<br>por descobrir<span>.</span></h2><p>Uma conta, uma lembrança. Uma nova página a cada aventura.</p></div><button class="roll-launch" (click)="openDice()"><span class="dice-icon" aria-hidden="true">◇</span><span>Deixe os dados contar<small>Abrir rolagens <span aria-hidden="true">↗</span></small></span></button></section>
+   <div id="resources" class="resource-anchor"><app-resources/></div>
+   <nav class="page-tabs" aria-label="Seções da ficha">@for(item of tabs;track item.key){<button [class.active]="tab()===item.key" [attr.aria-current]="tab()===item.key?'page':null" (click)="tab.set(item.key)"><span aria-hidden="true">{{item.icon}}</span>{{item.label}}</button>}<button class="resource-jump" (click)="goResources()" aria-label="Voltar aos recursos">↑ Recursos</button></nav>
+   <div class="page-content" [attr.data-section]="tab()">
+    @switch(tab()){
+     @case('sheet'){<app-sheet (edit)="edit()"/>}
+     @case('spells'){<app-spells (roll)="openDice(true)"/>}
+     @case('inventory'){<app-inventory/>}
+     @case('journal'){<app-journal/>}
+    }
+   </div>
+  </main>
+  <footer><div class="save-state" [class.failed]="store.saveError()" role="status"><span aria-hidden="true">{{store.saveError()?'!':'●'}}</span>{{store.saveStatus()}}</div><p>Este caderno fica neste navegador. Use o backup para levar sua ficha a outro dispositivo.</p><span class="footer-signature">Feito de raízes, lembranças e um pouco de âmbar.</span></footer>
+ </div>
+</div>
+@if(store.notice()){<div class="toast" role="status"><span>{{store.notice()}}</span><button class="icon-button" aria-label="Fechar aviso" (click)="store.notice.set('')">×</button></div>}
+<dialog #editor class="editor-dialog" aria-labelledby="editor-title" (cancel)="draft.set(null)">
+ <div class="dialog-heading"><div><span class="eyebrow">As margens também fazem parte da história</span><h2 id="editor-title">Editar personagem</h2></div><button class="icon-button" aria-label="Fechar edição" (click)="closeEditor()">×</button></div>
+ @if(draft();as d){<form (ngSubmit)="saveEdit()">
+ <div class="form-grid"><label>Nome<input name="name" [(ngModel)]="d.name" maxlength="150" required></label><label>Apelido<input name="nickname" [(ngModel)]="d.nickname" maxlength="80"></label><label>Pronomes<input name="pronouns" [(ngModel)]="d.pronouns" maxlength="80"></label><label>Idade<input name="age" type="number" min="0" max="9999" [(ngModel)]="d.age" required></label><label>Ancestralidade<input name="ancestry" [(ngModel)]="d.ancestry" maxlength="150"></label><label>Classe / subclasse<input name="className" [(ngModel)]="d.className" maxlength="150"></label><label>Comunidade<input name="community" [(ngModel)]="d.community" maxlength="150"></label><label>Nível<input name="level" type="number" min="1" max="10" [(ngModel)]="d.level" required></label></div>
+ <fieldset><legend>Retrato</legend><label>Carregar uma imagem (PNG, JPEG ou WebP, até 1,4 MB)<input type="file" accept="image/png,image/jpeg,image/webp" (change)="portrait($event)"></label>@if(d.portrait){<img class="portrait-preview" [src]="d.portrait" alt="Prévia do novo retrato"><button type="button" class="text-button" (click)="d.portrait=''">Usar retrato original</button>}</fieldset>
+ <fieldset><legend>Atributos</legend><div class="form-grid three">@for(trait of d.traits;track $index){<label>{{trait.name}}<input [name]="'trait'+$index" type="number" min="-10" max="20" [(ngModel)]="trait.value" required></label>}</div></fieldset>
+ <fieldset><legend>Defesas e recursos</legend><div class="form-grid three"><label>Evasão<input name="evasion" type="number" min="0" max="99" [(ngModel)]="d.evasion" required></label><label>Proficiência<input name="proficiency" type="number" min="1" max="10" [(ngModel)]="d.proficiency" required></label><label>Pontuação de Armadura<input name="armorScore" type="number" min="0" max="30" [(ngModel)]="d.armorScore" required></label><label>Limiar maior<input name="minor" type="number" min="1" max="999" [(ngModel)]="d.minor" required></label><label>Limiar severo<input name="major" type="number" [min]="d.minor" max="999" [(ngModel)]="d.major" required></label>
+ @for(r of resourceFields;track r.key){<label>{{r.label}}<input [name]="'max-'+r.key" type="number" min="1" max="30" [(ngModel)]="d.resources[r.key].max" required></label>}</div><p class="small muted">Ao reduzir uma capacidade, os espaços marcados se ajustam ao novo limite. Nível e textos de habilidades são editados manualmente.</p></fieldset>
+ <details class="editor-details"><summary>Editar experiências</summary>@for(exp of d.experiences;track $index){<fieldset><legend>Experiência {{$index+1}}</legend><div class="form-grid"><label>Nome<input [name]="'exp-name'+$index" [(ngModel)]="exp.name" maxlength="200"></label><label>Bônus<input [name]="'exp-bonus'+$index" type="number" min="-10" max="20" [(ngModel)]="exp.bonus"></label></div><label>Descrição<textarea [name]="'exp-description'+$index" rows="2" [(ngModel)]="exp.description" maxlength="5000"></textarea></label></fieldset>}</details>
+ <details class="editor-details"><summary>Editar habilidades</summary>@for(a of d.abilities;track $index){<fieldset><legend>Habilidade {{$index+1}}</legend><label>Nome<input [name]="'ability-name'+$index" [(ngModel)]="a.name" maxlength="200"></label><label>Descrição<textarea [name]="'ability-description'+$index" rows="3" [(ngModel)]="a.description" maxlength="10000"></textarea></label></fieldset>}</details>
+ <p class="quiet-note">Esperança começa não definida. O resumo cita 2 na criação e +1 no início da sessão; escolha a quantidade nos controles quando for jogar.</p>
+ @if(store.notice()){<p role="alert" class="error-text">{{store.notice()}}</p>}<div class="dialog-actions"><button class="button primary" type="submit">Salvar alterações</button><button class="button subtle" type="button" (click)="closeEditor()">Cancelar</button></div>
+ </form>}
+ <details class="reset-area"><summary>Restaurar a ficha inicial</summary><p class="small">Substitui os dados deste navegador. Exporte um backup para preservar sua aventura.</p><button class="button danger" (click)="reset()">Restaurar ficha do Kote</button></details>
+</dialog>
+<dialog #diceDialog class="dice-dialog" aria-labelledby="dice-title"><div class="dialog-heading"><div><span class="eyebrow">Esperança & medo</span><h2 id="dice-title">Que história vem agora?</h2></div><button class="icon-button" aria-label="Fechar rolagens" (click)="diceDialog.close()">×</button></div><app-dice/></dialog>
